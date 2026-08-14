@@ -21,6 +21,7 @@ export default function ProjectSettingsPage({ params }: { params: Promise<{ id: 
   const [employees, setEmployees] = useState<UserJSON[]>([]);
   const [columns, setColumns] = useState<ColumnJSON[]>([]);
   const [saving, setSaving] = useState(false);
+  const [auditVersion, setAuditVersion] = useState(0);
 
   const load = useCallback(async () => {
     try {
@@ -52,6 +53,7 @@ export default function ProjectSettingsPage({ params }: { params: Promise<{ id: 
         body: JSON.stringify(patch),
       });
       setProject(updated);
+      setAuditVersion((v) => v + 1);
       toast.success("Saved");
     } catch (err) {
       toast.error(err instanceof ApiClientError ? err.message : "Failed to save");
@@ -95,6 +97,7 @@ export default function ProjectSettingsPage({ params }: { params: Promise<{ id: 
         method: "PATCH",
         body: JSON.stringify({ columns }),
       });
+      setAuditVersion((v) => v + 1);
       toast.success("Columns updated");
     } catch (err) {
       toast.error(err instanceof ApiClientError ? err.message : "Failed to save columns");
@@ -203,7 +206,7 @@ export default function ProjectSettingsPage({ params }: { params: Promise<{ id: 
           <CardTitle className="text-base">Activity</CardTitle>
         </CardHeader>
         <CardContent>
-          <AuditTrail entityType="project" entityId={id} />
+          <AuditTrail entityType="project" entityId={id} refreshKey={auditVersion} />
         </CardContent>
       </Card>
     </div>

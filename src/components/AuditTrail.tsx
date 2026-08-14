@@ -15,25 +15,33 @@ const ENDPOINT_SEGMENT: Record<"task" | "project" | "finance", string> = {
 interface AuditTrailProps {
   entityType: "task" | "project" | "finance";
   entityId: string;
+  // Bump this (e.g. a counter) after a mutation on the same page/drawer so
+  // the trail refetches without needing a full remount.
+  refreshKey?: number | string;
 }
 
-export function AuditTrail({ entityType, entityId }: AuditTrailProps) {
+export function AuditTrail({ entityType, entityId, refreshKey }: AuditTrailProps) {
   const [entries, setEntries] = useState<AuditLogJSON[] | null>(null);
+
+  // Switching entity shows a loading state; a refreshKey bump (a mutation on
+  // the same page) just silently refetches in place, no flicker.
+  useEffect(() => {
+    setEntries(null);
+  }, [entityType, entityId]);
 
   useEffect(() => {
     let cancelled = false;
-    setEntries(null);
     apiFetch<AuditLogJSON[]>(`/api/${ENDPOINT_SEGMENT[entityType]}/${entityId}/audit`)
       .then((data) => {
         if (!cancelled) setEntries(data);
       })
       .catch(() => {
-        if (!cancelled) setEntries([]);
+        if (!cancelled) setEntries((prev) => prev ?? []);
       });
     return () => {
       cancelled = true;
     };
-  }, [entityType, entityId]);
+  }, [entityType, entityId, refreshKey]);
 
   if (entries === null) return <p className="text-xs text-muted-foreground">Loading activity...</p>;
   if (entries.length === 0) return <p className="text-xs text-muted-foreground">No activity yet.</p>;

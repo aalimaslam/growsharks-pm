@@ -61,6 +61,7 @@ export function TaskDetailDrawer({
   const [logHours, setLogHours] = useState("");
   const [logNote, setLogNote] = useState("");
   const [postingLog, setPostingLog] = useState(false);
+  const [auditVersion, setAuditVersion] = useState(0);
 
   const load = useCallback(async (id: string) => {
     setLoading(true);
@@ -92,6 +93,7 @@ export function TaskDetailDrawer({
       });
       setTask(updated);
       onUpdated(updated);
+      setAuditVersion((v) => v + 1);
     } catch (err) {
       toast.error(err instanceof ApiClientError ? err.message : "Failed to update task");
     }
@@ -107,6 +109,7 @@ export function TaskDetailDrawer({
       });
       setTask(updated);
       onUpdated(updated);
+      setAuditVersion((v) => v + 1);
       setCommentText("");
     } catch (err) {
       toast.error(err instanceof ApiClientError ? err.message : "Failed to add comment");
@@ -130,6 +133,7 @@ export function TaskDetailDrawer({
       });
       setTask(updated);
       onUpdated(updated);
+      setAuditVersion((v) => v + 1);
       setLogHours("");
       setLogNote("");
     } catch (err) {
@@ -346,7 +350,7 @@ export function TaskDetailDrawer({
 
             <div className="flex flex-col gap-2">
               <Label className="text-xs text-muted-foreground">Activity</Label>
-              <AuditTrail entityType="task" entityId={task._id} />
+              <AuditTrail entityType="task" entityId={task._id} refreshKey={auditVersion} />
             </div>
 
             {canDelete && (
