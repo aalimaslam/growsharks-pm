@@ -3,6 +3,8 @@ import { connectDB } from "@/lib/db";
 import { FinanceEntry } from "@/models/FinanceEntry";
 import { requireAdmin, parseBody, handleApiError } from "@/lib/apiUtils";
 import { createFinanceEntrySchema } from "@/lib/validators";
+import { withCache, cacheDel } from "@/lib/cache";
+import { FINANCE_LIST_PREFIX } from "@/lib/cacheKeys";
 
 export async function GET(req: Request) {
   try {
@@ -17,19 +19,22 @@ export async function GET(req: Request) {
     const to = searchParams.get("to");
     const q = searchParams.get("q");
 
-    const filter: Record<string, unknown> = {};
-    if (type) filter.type = type;
-    if (category) filter.category = category;
-    if (status) filter.status = status;
-    if (from || to) {
-      filter.date = {
-        ...(from ? { $gte: new Date(from) } : {}),
-        ...(to ? { $lte: new Date(to) } : {}),
-      };
-    }
-    if (q) filter.description = { $regex: q, $options: "i" };
+    const cacheKey = `${FINANCE_LIST_PREFIX}${searchParams.toString()}`;
+    const entries = await withCache(cacheKey, 30, () => {
+      const filter: Record<string, unknown> = {};
+      if (type) filter.type = type;
+      if (category) filter.category = category;
+      if (status) filter.status = status;
+      if (from || to) {
+        filter.date = {
+          ...(from ? { $gte: new Date(from) } : {}),
+          ...(to ? { $lte: new Date(to) } : {}),
+        };
+      }
+      if (q) filter.description = { $regex: q, $options: "i" };
 
-    const entries = await FinanceEntry.find(filter).select("-attachment.dataUrl").sort({ date: -1 }).lean();
+      return FinanceEntry.find(filter).select("-attachment.dataUrl").sort({ date: -1 }).lean();
+    });
     return NextResponse.json(entries);
   } catch (err) {
     return handleApiError(err);
@@ -56,6 +61,7 @@ export async function POST(req: Request) {
       createdBy: me.id,
     });
 
+    await cacheDel(FINANCE_LIST_PREFIX);
     return NextResponse.json(entry, { status: 201 });
   } catch (err) {
     return handleApiError(err);

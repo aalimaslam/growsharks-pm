@@ -8,6 +8,8 @@ import { commentSchema } from "@/lib/validators";
 import { canAccessProject } from "@/lib/permissions";
 import { notify } from "@/lib/notify";
 import { taskCommentEmail } from "@/lib/emailTemplates";
+import { cacheDel } from "@/lib/cache";
+import { TASKS_LIST_PREFIX, taskOneKey } from "@/lib/cacheKeys";
 
 const POPULATE = [
   { path: "assignee", select: "name email role title" },
@@ -59,6 +61,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     await task.populate(POPULATE);
+    await Promise.all([cacheDel(TASKS_LIST_PREFIX), cacheDel(taskOneKey(id))]);
     return NextResponse.json(task, { status: 201 });
   } catch (err) {
     return handleApiError(err);

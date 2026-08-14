@@ -1,5 +1,7 @@
 import { Notification } from "@/models/Notification";
 import { sendMail } from "@/lib/mailer";
+import { cacheDel } from "@/lib/cache";
+import { notificationsListKey } from "@/lib/cacheKeys";
 
 interface NotifyOptions {
   userId: string;
@@ -23,6 +25,7 @@ export async function notify(opts: NotifyOptions): Promise<void> {
     message: opts.message,
     link: opts.link || "",
   });
+  await cacheDel(notificationsListKey(opts.userId));
 
   await sendMail(opts.email, opts.subject, opts.html);
 }

@@ -5,6 +5,8 @@ import { Task } from "@/models/Task";
 import { requireUser, requireAdmin, parseBody, handleApiError, ApiError } from "@/lib/apiUtils";
 import { updateProjectSchema } from "@/lib/validators";
 import { canAccessProject } from "@/lib/permissions";
+import { withCache, cacheDel } from "@/lib/cache";
+import { PROJECTS_LIST_PREFIX, TASKS_LIST_PREFIX, projectOneKey } from "@/lib/cacheKeys";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -12,7 +14,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const { id } = await params;
     await connectDB();
 
-    const project = await Project.findById(id).populate("members", "name email role title").lean();
+    const project = await withCache(projectOneKey(id), 60, () =>
+      Project.findById(id).populate("members", "name email role title").lean()
+    );
     if (!project) throw new ApiError(404, "Project not found");
     if (!canAccessProject(me, project)) throw new ApiError(403, "Forbidden");
 
@@ -34,6 +38,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       "name email role title"
     );
     if (!project) throw new ApiError(404, "Project not found");
+    await Promise.all([cacheDel(PROJECTS_LIST_PREFIX), cacheDel(projectOneKey(id))]);
     return NextResponse.json(project);
   } catch (err) {
     return handleApiError(err);
@@ -49,6 +54,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     const project = await Project.findByIdAndDelete(id);
     if (!project) throw new ApiError(404, "Project not found");
     await Task.deleteMany({ project: id });
+    await Promise.all([cacheDel(PROJECTS_LIST_PREFIX), cacheDel(projectOneKey(id)), cacheDel(TASKS_LIST_PREFIX)]);
 
     return NextResponse.json({ ok: true });
   } catch (err) {

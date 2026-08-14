@@ -8,6 +8,8 @@ import { updateTaskSchema } from "@/lib/validators";
 import { canAccessProject, canMoveTask } from "@/lib/permissions";
 import { notify } from "@/lib/notify";
 import { taskAssignedEmail, taskCompletedEmail } from "@/lib/emailTemplates";
+import { withCache, cacheDel } from "@/lib/cache";
+import { TASKS_LIST_PREFIX, taskOneKey } from "@/lib/cacheKeys";
 
 const POPULATE = [
   { path: "assignee", select: "name email role title" },
@@ -33,7 +35,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const { project } = await loadTaskAndProject(id);
     if (!canAccessProject(me, project)) throw new ApiError(403, "Forbidden");
 
-    const task = await Task.findById(id).populate(POPULATE).lean();
+    const task = await withCache(taskOneKey(id), 20, () => Task.findById(id).populate(POPULATE).lean());
     return NextResponse.json(task);
   } catch (err) {
     return handleApiError(err);
@@ -127,6 +129,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     await task.populate(POPULATE);
+    await Promise.all([cacheDel(TASKS_LIST_PREFIX), cacheDel(taskOneKey(id))]);
     return NextResponse.json(task);
   } catch (err) {
     return handleApiError(err);
@@ -146,6 +149,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     }
 
     await Task.findByIdAndDelete(id);
+    await Promise.all([cacheDel(TASKS_LIST_PREFIX), cacheDel(taskOneKey(id))]);
     return NextResponse.json({ ok: true });
   } catch (err) {
     return handleApiError(err);

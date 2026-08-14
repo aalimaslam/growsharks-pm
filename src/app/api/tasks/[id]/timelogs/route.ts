@@ -5,6 +5,8 @@ import { Task } from "@/models/Task";
 import { requireUser, parseBody, handleApiError, ApiError } from "@/lib/apiUtils";
 import { timeLogSchema } from "@/lib/validators";
 import { canAccessProject } from "@/lib/permissions";
+import { cacheDel } from "@/lib/cache";
+import { TASKS_LIST_PREFIX, taskOneKey } from "@/lib/cacheKeys";
 
 const POPULATE = [
   { path: "assignee", select: "name email role title" },
@@ -35,6 +37,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     await task.save();
 
     await task.populate(POPULATE);
+    await Promise.all([cacheDel(TASKS_LIST_PREFIX), cacheDel(taskOneKey(id))]);
     return NextResponse.json(task, { status: 201 });
   } catch (err) {
     return handleApiError(err);

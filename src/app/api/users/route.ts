@@ -7,12 +7,16 @@ import { createEmployeeSchema } from "@/lib/validators";
 import { generateTempPassword } from "@/lib/password";
 import { notify } from "@/lib/notify";
 import { welcomeEmail } from "@/lib/emailTemplates";
+import { withCache, cacheDel } from "@/lib/cache";
+import { USERS_LIST_KEY } from "@/lib/cacheKeys";
 
 export async function GET() {
   try {
     await requireAdmin();
     await connectDB();
-    const users = await User.find().select("-passwordHash").sort({ createdAt: -1 }).lean();
+    const users = await withCache(USERS_LIST_KEY, 60, () =>
+      User.find().select("-passwordHash").sort({ createdAt: -1 }).lean()
+    );
     return NextResponse.json(users);
   } catch (err) {
     return handleApiError(err);
@@ -55,6 +59,7 @@ export async function POST(req: Request) {
 
     const { passwordHash: _omit, ...safe } = user.toObject();
     void _omit;
+    await cacheDel(USERS_LIST_KEY);
     return NextResponse.json(safe, { status: 201 });
   } catch (err) {
     return handleApiError(err);

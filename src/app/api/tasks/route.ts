@@ -8,6 +8,8 @@ import { createTaskSchema } from "@/lib/validators";
 import { canAccessProject } from "@/lib/permissions";
 import { notify } from "@/lib/notify";
 import { taskAssignedEmail } from "@/lib/emailTemplates";
+import { withCache, cacheDel } from "@/lib/cache";
+import { TASKS_LIST_PREFIX } from "@/lib/cacheKeys";
 
 const POPULATE = [
   { path: "assignee", select: "name email role title" },
@@ -32,21 +34,26 @@ export async function GET(req: Request) {
 
     await connectDB();
 
-    const filter: Record<string, unknown> = {};
     if (projectId) {
       const project = await Project.findById(projectId);
       if (!project) throw new ApiError(404, "Project not found");
       if (!canAccessProject(me, project)) throw new ApiError(403, "Forbidden");
-      filter.project = projectId;
-    } else if (me.role !== "admin") {
-      // No project filter + not admin: scope to projects the user belongs to.
-      const projects = await Project.find({ members: me.id }).select("_id");
-      filter.project = { $in: projects.map((p) => p._id) };
     }
 
-    if (mine) filter.assignee = me.id;
+    const cacheKey = `${TASKS_LIST_PREFIX}${projectId ?? "all"}:${mine ? me.id : "all"}:${me.role === "admin" ? "admin" : me.id}`;
+    const tasks = await withCache(cacheKey, 20, async () => {
+      const filter: Record<string, unknown> = {};
+      if (projectId) {
+        filter.project = projectId;
+      } else if (me.role !== "admin") {
+        // No project filter + not admin: scope to projects the user belongs to.
+        const projects = await Project.find({ members: me.id }).select("_id");
+        filter.project = { $in: projects.map((p) => p._id) };
+      }
+      if (mine) filter.assignee = me.id;
 
-    const tasks = await Task.find(filter).populate(LIST_POPULATE).sort({ order: 1 }).lean();
+      return Task.find(filter).populate(LIST_POPULATE).sort({ order: 1 }).lean();
+    });
     return NextResponse.json(tasks);
   } catch (err) {
     return handleApiError(err);
@@ -109,6 +116,7 @@ export async function POST(req: Request) {
     }
 
     await task.populate(POPULATE);
+    await cacheDel(TASKS_LIST_PREFIX);
     return NextResponse.json(task, { status: 201 });
   } catch (err) {
     return handleApiError(err);
