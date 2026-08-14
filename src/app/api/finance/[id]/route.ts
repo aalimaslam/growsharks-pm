@@ -10,7 +10,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const { id } = await params;
     await connectDB();
 
-    const entry = await FinanceEntry.findById(id);
+    const entry = await FinanceEntry.findById(id).lean();
     if (!entry) throw new ApiError(404, "Entry not found");
     return NextResponse.json(entry);
   } catch (err) {

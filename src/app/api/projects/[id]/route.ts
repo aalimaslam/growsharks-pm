@@ -12,7 +12,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const { id } = await params;
     await connectDB();
 
-    const project = await Project.findById(id).populate("members", "name email role title");
+    const project = await Project.findById(id).populate("members", "name email role title").lean();
     if (!project) throw new ApiError(404, "Project not found");
     if (!canAccessProject(me, project)) throw new ApiError(403, "Forbidden");
 

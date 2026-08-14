@@ -12,7 +12,7 @@ export async function GET() {
   try {
     await requireAdmin();
     await connectDB();
-    const users = await User.find().select("-passwordHash").sort({ createdAt: -1 });
+    const users = await User.find().select("-passwordHash").sort({ createdAt: -1 }).lean();
     return NextResponse.json(users);
   } catch (err) {
     return handleApiError(err);

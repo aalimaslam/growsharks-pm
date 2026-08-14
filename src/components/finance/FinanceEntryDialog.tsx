@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Paperclip, X } from "lucide-react";
 import { apiFetch, ApiClientError } from "@/lib/apiClient";
-import type { FinanceEntryJSON, FinanceType, RecurrenceInterval } from "@/types";
+import type { FinanceAttachmentJSON, FinanceEntryJSON, FinanceType, RecurrenceInterval } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +27,7 @@ interface FormState {
   status: "paid" | "pending" | "overdue";
   isRecurring: boolean;
   recurrenceInterval: RecurrenceInterval;
-  attachment: { dataUrl: string; name: string; mimeType: string } | null;
+  attachment: FinanceAttachmentJSON | null;
 }
 
 function todayISODate() {

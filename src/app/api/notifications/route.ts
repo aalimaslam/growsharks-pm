@@ -8,7 +8,7 @@ export async function GET() {
   try {
     const me = await requireUser();
     await connectDB();
-    const notifications = await Notification.find({ user: me.id }).sort({ createdAt: -1 }).limit(50);
+    const notifications = await Notification.find({ user: me.id }).sort({ createdAt: -1 }).limit(50).lean();
     return NextResponse.json(notifications);
   } catch (err) {
     return handleApiError(err);

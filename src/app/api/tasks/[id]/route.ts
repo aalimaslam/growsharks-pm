@@ -33,7 +33,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const { project } = await loadTaskAndProject(id);
     if (!canAccessProject(me, project)) throw new ApiError(403, "Forbidden");
 
-    const task = await Task.findById(id).populate(POPULATE);
+    const task = await Task.findById(id).populate(POPULATE).lean();
     return NextResponse.json(task);
   } catch (err) {
     return handleApiError(err);

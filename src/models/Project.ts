@@ -28,7 +28,7 @@ const projectSchema = new Schema(
     status: { type: String, enum: ["active", "on-hold", "completed", "archived"], default: "active" },
     deadline: { type: Date },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    members: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    members: [{ type: Schema.Types.ObjectId, ref: "User", index: true }],
     columns: { type: [columnSchema], default: DEFAULT_COLUMNS },
   },
   { timestamps: true }

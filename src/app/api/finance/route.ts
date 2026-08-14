@@ -29,7 +29,7 @@ export async function GET(req: Request) {
     }
     if (q) filter.description = { $regex: q, $options: "i" };
 
-    const entries = await FinanceEntry.find(filter).sort({ date: -1 });
+    const entries = await FinanceEntry.find(filter).select("-attachment.dataUrl").sort({ date: -1 }).lean();
     return NextResponse.json(entries);
   } catch (err) {
     return handleApiError(err);

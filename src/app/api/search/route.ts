@@ -26,10 +26,10 @@ export async function GET(req: Request) {
     if (accessibleProjectIds) taskFilter.project = { $in: accessibleProjectIds };
 
     const [projects, tasks, people] = await Promise.all([
-      Project.find(projectFilter).select("name").limit(LIMIT),
-      Task.find(taskFilter).select("title project").populate("project", "name").limit(LIMIT),
+      Project.find(projectFilter).select("name").limit(LIMIT).lean(),
+      Task.find(taskFilter).select("title project").populate("project", "name").limit(LIMIT).lean(),
       me.role === "admin"
-        ? User.find({ $or: [{ name: regex }, { email: regex }] }).select("name email").limit(LIMIT)
+        ? User.find({ $or: [{ name: regex }, { email: regex }] }).select("name email").limit(LIMIT).lean()
         : Promise.resolve([]),
     ]);
 

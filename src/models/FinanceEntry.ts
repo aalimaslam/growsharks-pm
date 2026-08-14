@@ -16,7 +16,7 @@ const financeEntrySchema = new Schema(
     currency: { type: String, default: "INR" },
     category: { type: String, required: true, trim: true },
     description: { type: String, trim: true, default: "" },
-    date: { type: Date, required: true, default: Date.now },
+    date: { type: Date, required: true, default: Date.now, index: true },
     status: { type: String, enum: ["paid", "pending", "overdue"], default: "paid" },
     isRecurring: { type: Boolean, default: false },
     recurrenceInterval: { type: String, enum: ["weekly", "monthly", "yearly", null], default: null },

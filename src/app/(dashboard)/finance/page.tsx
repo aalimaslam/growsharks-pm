@@ -135,6 +135,38 @@ export default function FinancePage() {
     }
   };
 
+  const openEdit = async (entry: FinanceEntryJSON) => {
+    setDuplicateSeed(null);
+    if (!entry.attachment) {
+      setEditing(entry);
+      setDialogOpen(true);
+      return;
+    }
+    // List rows omit the attachment's data URL for load performance; fetch
+    // the full entry so the edit dialog doesn't silently drop the receipt.
+    try {
+      const full = await apiFetch<FinanceEntryJSON>(`/api/finance/${entry._id}`);
+      setEditing(full);
+      setDialogOpen(true);
+    } catch (err) {
+      toast.error(err instanceof ApiClientError ? err.message : "Failed to load entry");
+    }
+  };
+
+  const downloadAttachment = async (entry: FinanceEntryJSON) => {
+    if (!entry.attachment) return;
+    try {
+      const full = entry.attachment.dataUrl ? entry : await apiFetch<FinanceEntryJSON>(`/api/finance/${entry._id}`);
+      if (!full.attachment?.dataUrl) return;
+      const a = document.createElement("a");
+      a.href = full.attachment.dataUrl;
+      a.download = full.attachment.name;
+      a.click();
+    } catch (err) {
+      toast.error(err instanceof ApiClientError ? err.message : "Failed to download attachment");
+    }
+  };
+
   const duplicateForNextPeriod = (entry: FinanceEntryJSON) => {
     const interval = entry.recurrenceInterval || "monthly";
     setDuplicateSeed({ ...entry, date: addInterval(new Date(entry.date), interval).toISOString() });
@@ -346,11 +378,15 @@ export default function FinancePage() {
                 <TableCell>
                   <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
                     {e.attachment && (
-                      <a href={e.attachment.dataUrl} download={e.attachment.name} title="Download attachment">
-                        <Button variant="ghost" size="icon-sm" className="size-7">
-                          <Download className="size-3.5" />
-                        </Button>
-                      </a>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="size-7"
+                        title="Download attachment"
+                        onClick={() => downloadAttachment(e)}
+                      >
+                        <Download className="size-3.5" />
+                      </Button>
                     )}
                     {e.isRecurring && (
                       <Button
@@ -367,11 +403,7 @@ export default function FinancePage() {
                       variant="ghost"
                       size="icon-sm"
                       className="size-7"
-                      onClick={() => {
-                        setEditing(e);
-                        setDuplicateSeed(null);
-                        setDialogOpen(true);
-                      }}
+                      onClick={() => openEdit(e)}
                     >
                       <Pencil className="size-3.5" />
                     </Button>

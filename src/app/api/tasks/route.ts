@@ -16,6 +16,13 @@ const POPULATE = [
   { path: "timeLogs.user", select: "name email role title" },
 ];
 
+// The board/list view only renders assignee + createdBy; comments and time
+// logs are fetched in full detail by GET /api/tasks/[id] when a task opens.
+const LIST_POPULATE = [
+  { path: "assignee", select: "name email role title" },
+  { path: "createdBy", select: "name email role title" },
+];
+
 export async function GET(req: Request) {
   try {
     const me = await requireUser();
@@ -39,7 +46,7 @@ export async function GET(req: Request) {
 
     if (mine) filter.assignee = me.id;
 
-    const tasks = await Task.find(filter).populate(POPULATE).sort({ order: 1 });
+    const tasks = await Task.find(filter).populate(LIST_POPULATE).sort({ order: 1 }).lean();
     return NextResponse.json(tasks);
   } catch (err) {
     return handleApiError(err);

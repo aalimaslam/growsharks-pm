@@ -25,7 +25,7 @@ const taskSchema = new Schema(
     project: { type: Schema.Types.ObjectId, ref: "Project", required: true, index: true },
     columnId: { type: String, required: true },
     order: { type: Number, required: true, default: 0 },
-    assignee: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    assignee: { type: Schema.Types.ObjectId, ref: "User", default: null, index: true },
     priority: { type: String, enum: ["low", "medium", "high"], default: "medium" },
     dueDate: { type: Date, default: null },
     estimatedHours: { type: Number, default: null },

@@ -12,7 +12,8 @@ export async function GET() {
     const filter = me.role === "admin" ? {} : { members: me.id };
     const projects = await Project.find(filter)
       .populate("members", "name email role")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     return NextResponse.json(projects);
   } catch (err) {

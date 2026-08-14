@@ -81,7 +81,10 @@ export type FinanceStatus = "paid" | "pending" | "overdue";
 export type RecurrenceInterval = "weekly" | "monthly" | "yearly";
 
 export interface FinanceAttachmentJSON {
-  dataUrl: string;
+  // Omitted from list responses (GET /api/finance) to avoid shipping every
+  // attachment's base64 payload on every page load; present on single-entry
+  // fetches (GET /api/finance/[id]) and after create/update.
+  dataUrl?: string;
   name: string;
   mimeType: string;
 }
