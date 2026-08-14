@@ -38,6 +38,11 @@ export const financeStatusColors: Record<string, string> = {
   overdue: "bg-accent-pink-soft text-accent-pink",
 };
 
+export const reimbursementColors: Record<"reimbursed" | "pending", string> = {
+  reimbursed: "bg-accent-cyan-soft text-accent-cyan",
+  pending: "bg-accent-amber-soft text-accent-amber",
+};
+
 const avatarPalette = [
   "bg-accent-blue-soft text-accent-blue",
   "bg-accent-violet-soft text-accent-violet",

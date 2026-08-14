@@ -5,10 +5,11 @@ import { requireAdmin, parseBody, handleApiError, ApiError } from "@/lib/apiUtil
 import { columnsSchema } from "@/lib/validators";
 import { cacheDel } from "@/lib/cache";
 import { PROJECTS_LIST_PREFIX, projectOneKey } from "@/lib/cacheKeys";
+import { recordAudit } from "@/lib/audit";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireAdmin();
+    const me = await requireAdmin();
     const { id } = await params;
     const body = await parseBody(req, columnsSchema);
     await connectDB();
@@ -19,6 +20,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     );
     if (!project) throw new ApiError(404, "Project not found");
     await Promise.all([cacheDel(PROJECTS_LIST_PREFIX), cacheDel(projectOneKey(id))]);
+    await recordAudit({
+      entityType: "project",
+      entityId: id,
+      action: "update",
+      actorId: me.id,
+      message: `${me.name} updated the board columns for "${project.name}"`,
+    });
     return NextResponse.json(project);
   } catch (err) {
     return handleApiError(err);

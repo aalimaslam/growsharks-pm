@@ -10,6 +10,7 @@ import { notify } from "@/lib/notify";
 import { taskAssignedEmail } from "@/lib/emailTemplates";
 import { withCache, cacheDel } from "@/lib/cache";
 import { TASKS_LIST_PREFIX } from "@/lib/cacheKeys";
+import { recordAudit } from "@/lib/audit";
 
 const POPULATE = [
   { path: "assignee", select: "name email role title" },
@@ -117,6 +118,13 @@ export async function POST(req: Request) {
 
     await task.populate(POPULATE);
     await cacheDel(TASKS_LIST_PREFIX);
+    await recordAudit({
+      entityType: "task",
+      entityId: task._id.toString(),
+      action: "create",
+      actorId: me.id,
+      message: `${me.name} created task "${task.title}"`,
+    });
     return NextResponse.json(task, { status: 201 });
   } catch (err) {
     return handleApiError(err);

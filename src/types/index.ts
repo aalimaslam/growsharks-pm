@@ -104,4 +104,19 @@ export interface FinanceEntryJSON {
   createdBy: UserJSON | string;
   createdAt: string;
   updatedAt: string;
+  reimbursable: boolean;
+  reimbursed: boolean;
+  reimbursedBy: UserJSON | string | null;
+  reimbursedAt: string | null;
+}
+
+export interface AuditLogJSON {
+  _id: string;
+  entityType: "task" | "project" | "finance";
+  entityId: string;
+  action: "create" | "update" | "delete" | "comment" | "timelog" | "reimburse" | "unreimburse";
+  actor: UserJSON | string;
+  message: string;
+  changes: Record<string, { from: unknown; to: unknown }> | null;
+  createdAt: string;
 }

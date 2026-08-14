@@ -39,3 +39,26 @@ export function canMoveTask(
   const creatorId = task.createdBy ? String(task.createdBy) : null;
   return assigneeId === user.id || creatorId === user.id;
 }
+
+// Admins see/manage every finance entry; employees only their own.
+export function canViewFinanceEntry(user: SessionUser, entry: { createdBy: unknown }): boolean {
+  return user.role === "admin" || idOf(entry.createdBy) === user.id;
+}
+
+// Editing/deleting your own entry is only allowed before it's been
+// reimbursed — once money has changed hands the record is locked for
+// non-admins so the audit trail stays trustworthy.
+export function canEditFinanceEntry(
+  user: SessionUser,
+  entry: { createdBy: unknown; reimbursed?: boolean }
+): boolean {
+  if (user.role === "admin") return true;
+  return idOf(entry.createdBy) === user.id && !entry.reimbursed;
+}
+
+// Reimbursement itself (marking paid back) can be done by an admin, or by
+// the employee themselves for their own reimbursable expense — e.g. they
+// were already paid back in cash and are just recording it.
+export function canReimburseFinanceEntry(user: SessionUser, entry: { createdBy: unknown }): boolean {
+  return user.role === "admin" || idOf(entry.createdBy) === user.id;
+}

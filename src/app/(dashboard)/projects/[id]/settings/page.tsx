@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AuditTrail } from "@/components/AuditTrail";
 
 export default function ProjectSettingsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -194,6 +195,15 @@ export default function ProjectSettingsPage({ params }: { params: Promise<{ id: 
               {e.name} <span className="text-xs text-muted-foreground">({e.email})</span>
             </label>
           ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AuditTrail entityType="project" entityId={id} />
         </CardContent>
       </Card>
     </div>

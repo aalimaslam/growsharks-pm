@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { avatarColorFor } from "@/lib/badgeColors";
+import { AuditTrail } from "@/components/AuditTrail";
 
 function initials(name: string) {
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
@@ -339,6 +340,13 @@ export function TaskDetailDrawer({
                   <Send className="size-4" />
                 </Button>
               </div>
+            </div>
+
+            <Separator />
+
+            <div className="flex flex-col gap-2">
+              <Label className="text-xs text-muted-foreground">Activity</Label>
+              <AuditTrail entityType="task" entityId={task._id} />
             </div>
 
             {canDelete && (

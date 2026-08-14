@@ -77,6 +77,22 @@ export function taskCommentEmail(opts: { recipientName: string; commenterName: s
   };
 }
 
+export function expenseReimbursedEmail(opts: {
+  recipientName: string;
+  category: string;
+  amount: string;
+  reimbursedByName: string;
+}): { subject: string; html: string } {
+  return {
+    subject: `Expense reimbursed: ${opts.category}`,
+    html: layout("Expense reimbursed", `
+      <p>Hi ${opts.recipientName},</p>
+      <p><strong>${opts.reimbursedByName}</strong> marked your expense <strong>${opts.category}</strong> (${opts.amount}) as reimbursed.</p>
+      ${button(`${appUrl()}/expenses`, "View expenses")}
+    `),
+  };
+}
+
 export function passwordChangedEmail(opts: { name: string }): { subject: string; html: string } {
   return {
     subject: "Your password was changed",

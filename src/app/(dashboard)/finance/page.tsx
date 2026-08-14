@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { apiFetch, ApiClientError } from "@/lib/apiClient";
 import type { FinanceEntryJSON, RecurrenceInterval } from "@/types";
-import { financeStatusColors } from "@/lib/badgeColors";
+import { financeStatusColors, reimbursementColors } from "@/lib/badgeColors";
 import { CHART_INCOME_COLOR, CHART_EXPENSE_COLOR } from "@/lib/chartColors";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -364,7 +364,20 @@ export default function FinancePage() {
                   </span>
                 </TableCell>
                 <TableCell>
-                  <Badge className={cn("capitalize border-transparent text-[11px] px-1.5 py-0.5", financeStatusColors[e.status])}>{e.status}</Badge>
+                  <div className="flex items-center gap-1.5">
+                    <Badge className={cn("capitalize border-transparent text-[11px] px-1.5 py-0.5", financeStatusColors[e.status])}>{e.status}</Badge>
+                    {e.reimbursable && (
+                      <Badge
+                        className={cn(
+                          "capitalize border-transparent text-[11px] px-1.5 py-0.5",
+                          reimbursementColors[e.reimbursed ? "reimbursed" : "pending"]
+                        )}
+                        title={e.reimbursed ? "Reimbursed" : "Awaiting reimbursement"}
+                      >
+                        {e.reimbursed ? "Reimbursed" : "To reimburse"}
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell
                   className={cn(

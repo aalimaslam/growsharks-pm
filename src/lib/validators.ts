@@ -102,6 +102,9 @@ export const createFinanceEntrySchema = z.object({
   isRecurring: z.boolean().optional().default(false),
   recurrenceInterval: z.enum(["weekly", "monthly", "yearly"]).nullable().optional(),
   attachment: attachmentSchema.nullable().optional(),
+  // Out-of-pocket expense that needs paying back. Employees always get this
+  // forced true server-side; admins may opt in for their own expenses.
+  reimbursable: z.boolean().optional(),
 });
 
 export const updateFinanceEntrySchema = z.object({
@@ -115,4 +118,8 @@ export const updateFinanceEntrySchema = z.object({
   isRecurring: z.boolean().optional(),
   recurrenceInterval: z.enum(["weekly", "monthly", "yearly"]).nullable().optional(),
   attachment: attachmentSchema.nullable().optional(),
+});
+
+export const reimburseSchema = z.object({
+  reimbursed: z.boolean().optional().default(true),
 });

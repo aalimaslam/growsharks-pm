@@ -5,6 +5,7 @@ import { requireUser, requireAdmin, parseBody, handleApiError } from "@/lib/apiU
 import { createProjectSchema } from "@/lib/validators";
 import { withCache, cacheDel } from "@/lib/cache";
 import { PROJECTS_LIST_PREFIX } from "@/lib/cacheKeys";
+import { recordAudit } from "@/lib/audit";
 
 export async function GET() {
   try {
@@ -40,6 +41,13 @@ export async function POST(req: Request) {
 
     const populated = await project.populate("members", "name email role");
     await cacheDel(PROJECTS_LIST_PREFIX);
+    await recordAudit({
+      entityType: "project",
+      entityId: project._id.toString(),
+      action: "create",
+      actorId: me.id,
+      message: `${me.name} created project "${project.name}"`,
+    });
     return NextResponse.json(populated, { status: 201 });
   } catch (err) {
     return handleApiError(err);

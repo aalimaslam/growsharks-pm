@@ -31,9 +31,19 @@ export function NotificationBell() {
 
   useEffect(() => {
     load();
-    const id = setInterval(load, 30000);
-    return () => clearInterval(id);
   }, [load]);
+
+  // Live-pushed via SSE instead of polling — the server sends a new
+  // notification the moment it's created (src/lib/notifyBus.ts).
+  // EventSource reconnects automatically on its own if the connection drops.
+  useEffect(() => {
+    const source = new EventSource("/api/notifications/stream");
+    source.onmessage = (event) => {
+      const notification = JSON.parse(event.data) as NotificationJSON;
+      setNotifications((prev) => [notification, ...prev.filter((n) => n._id !== notification._id)]);
+    };
+    return () => source.close();
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 

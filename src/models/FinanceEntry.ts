@@ -22,6 +22,13 @@ const financeEntrySchema = new Schema(
     recurrenceInterval: { type: String, enum: ["weekly", "monthly", "yearly", null], default: null },
     attachment: { type: attachmentSchema, default: null },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+
+    // Employee-submitted out-of-pocket expenses that need paying back.
+    // Company expenses/income entered by admins are never reimbursable.
+    reimbursable: { type: Boolean, default: false, index: true },
+    reimbursed: { type: Boolean, default: false },
+    reimbursedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    reimbursedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

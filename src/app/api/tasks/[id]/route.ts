@@ -10,6 +10,7 @@ import { notify } from "@/lib/notify";
 import { taskAssignedEmail, taskCompletedEmail } from "@/lib/emailTemplates";
 import { withCache, cacheDel } from "@/lib/cache";
 import { TASKS_LIST_PREFIX, taskOneKey } from "@/lib/cacheKeys";
+import { recordAudit, diffFields } from "@/lib/audit";
 
 const POPULATE = [
   { path: "assignee", select: "name email role title" },
@@ -66,6 +67,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const previousColumnId = task.columnId;
+    const before = {
+      title: task.title,
+      description: task.description,
+      columnId: task.columnId,
+      priority: task.priority,
+      dueDate: task.dueDate,
+      estimatedHours: task.estimatedHours,
+      assignee: task.assignee?.toString() ?? null,
+    };
 
     if (body.title !== undefined) task.title = body.title;
     if (body.description !== undefined) task.description = body.description;
@@ -128,8 +138,29 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       }
     }
 
+    const after = {
+      title: task.title,
+      description: task.description,
+      columnId: task.columnId,
+      priority: task.priority,
+      dueDate: task.dueDate,
+      estimatedHours: task.estimatedHours,
+      assignee: task.assignee?.toString() ?? null,
+    };
+    const changes = diffFields(before, after, Object.keys(after) as (keyof typeof after)[]);
+
     await task.populate(POPULATE);
     await Promise.all([cacheDel(TASKS_LIST_PREFIX), cacheDel(taskOneKey(id))]);
+    if (Object.keys(changes).length > 0) {
+      await recordAudit({
+        entityType: "task",
+        entityId: id,
+        action: "update",
+        actorId: me.id,
+        message: `${me.name} updated task "${task.title}"`,
+        changes,
+      });
+    }
     return NextResponse.json(task);
   } catch (err) {
     return handleApiError(err);
@@ -150,6 +181,13 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
 
     await Task.findByIdAndDelete(id);
     await Promise.all([cacheDel(TASKS_LIST_PREFIX), cacheDel(taskOneKey(id))]);
+    await recordAudit({
+      entityType: "task",
+      entityId: id,
+      action: "delete",
+      actorId: me.id,
+      message: `${me.name} deleted task "${task.title}"`,
+    });
     return NextResponse.json({ ok: true });
   } catch (err) {
     return handleApiError(err);

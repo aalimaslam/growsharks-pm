@@ -46,8 +46,16 @@ Internal project & task management tool for GrowSharks — Kanban boards per pro
 
 ## Roles
 
-- **Admin** — creates/manages projects and board columns, adds employee accounts (sends a welcome email with a temporary password), assigns/reassigns tasks to anyone, deletes tasks/projects, sees all projects and the time-tracking report.
-- **Employee** — sees only the projects they're a member of, can create tasks in those projects, can move (drag between columns) only tasks they're assigned to or created, can comment and log time.
+- **Admin** — creates/manages projects and board columns, adds employee accounts (sends a welcome email with a temporary password), assigns/reassigns tasks to anyone, deletes tasks/projects, sees all projects and the time-tracking report, reimburses any employee's expense.
+- **Employee** — sees only the projects they're a member of, can create tasks in those projects, can move (drag between columns) only tasks they're assigned to or created, can comment and log time, can submit and self-reimburse their own expenses.
+
+## Expenses & reimbursement
+
+Anyone can submit an out-of-pocket expense at `/expenses` (employees: expenses only; admins may also submit their own reimbursable expenses from the same page — regular company income/expense entries stay on the admin-only `/finance` page and are never reimbursable). A submitted expense can be marked reimbursed by an admin, or by the employee themselves (e.g. they were already paid back in cash and are just recording it) — `src/lib/permissions.ts`'s `canReimburseFinanceEntry`. Every entry records `reimbursedBy`/`reimbursedAt`, and reimbursing someone else's expense sends them a notification + email.
+
+## Audit trail
+
+Every create/update/delete on tasks and projects — plus create/update/delete/reimburse on finance entries — is recorded to the `AuditLog` collection (`src/lib/audit.ts`) with who did it, when, and a field-level diff for updates. View it in the task detail drawer, a project's Settings page, or an expense's history icon. Writing an audit entry never blocks or fails the action it's describing — a logging failure is caught and logged, not thrown.
 
 ## Email notifications
 
@@ -58,13 +66,16 @@ Every trigger below writes an in-app notification (bell icon) and sends an email
 3. Task moved into a "done" column → email to the task's creator
 4. New comment → email to the other participants (assignee + creator)
 5. Password changed → confirmation email
+6. Expense reimbursed → email to the employee (skipped when they reimbursed themselves)
+
+In-app notifications are pushed live over SSE (`/api/notifications/stream`, `src/lib/notifyBus.ts`) instead of the client polling — an in-process `EventEmitter` handles delivery on a single instance, and when `REDIS_URL` is set it goes through Redis pub/sub instead so it fans out correctly across multiple instances.
 
 ## Caching
 
-Read-heavy list/detail endpoints (projects, tasks, finance entries, notifications, users) are wrapped in a Redis read-through cache (`src/lib/cache.ts`, `src/lib/cacheKeys.ts`):
+Read-heavy list/detail endpoints (projects, tasks, finance entries, notifications, users) and the dashboard's aggregate queries (`src/lib/dashboardData.ts`) are wrapped in a Redis read-through cache (`src/lib/cache.ts`, `src/lib/cacheKeys.ts`):
 
 - Every cached key is written with a TTL (15–60s depending on how often that data changes) — there are no permanent keys.
-- Every route that mutates data explicitly deletes the relevant cache key(s)/prefix on write, so reads are never stale beyond the TTL window even between invalidations.
+- Every route that mutates data explicitly deletes the relevant cache key(s)/prefix on write, so reads are never stale beyond the TTL window even between invalidations. The one exception is the dashboard cache (`dashboard:admin`, `dashboard:employee:<id>`) — its aggregates touch nearly every collection, so it relies on its TTL alone (30s/20s) rather than trying to invalidate it from every task/project/finance/user mutation in the app.
 - If `REDIS_URL` is unset, or Redis is unreachable, `src/lib/redis.ts` returns `null` and every cache helper silently falls back to hitting MongoDB directly — a cache outage degrades performance, it never breaks a request.
 
 **Eviction policy**: because nothing is ever cached without a TTL, `maxmemory-policy` can safely be `allkeys-lru` (evict least-recently-used keys once `maxmemory` is hit) — this is what `docker-compose.yml` sets for local dev (`256mb` / `allkeys-lru`). Configure the same on your production Redis instance (Upstash, Redis Cloud, ElastiCache, etc). `volatile-lru` also works today since every key has a TTL, but `allkeys-lru` is the safer default in case a future key is ever added without one.
