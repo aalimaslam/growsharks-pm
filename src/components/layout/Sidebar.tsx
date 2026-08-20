@@ -4,13 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Waves } from "lucide-react";
-import { navLinks as links } from "@/components/layout/nav-links";
+import { navLinks as links, isNavLinkVisible } from "@/components/layout/nav-links";
 
 interface SidebarProps {
   role: "admin" | "employee";
+  isContentTeam: boolean;
 }
 
-export function Sidebar({ role }: SidebarProps) {
+export function Sidebar({ role, isContentTeam }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -26,7 +27,7 @@ export function Sidebar({ role }: SidebarProps) {
       </div>
       <nav className="flex flex-1 flex-col gap-1">
         {links
-          .filter((l) => !l.adminOnly || role === "admin")
+          .filter((l) => isNavLinkVisible(l, { role, isContentTeam }))
           .map((link) => {
             const active = pathname === link.href || pathname.startsWith(link.href + "/");
             const Icon = link.icon;

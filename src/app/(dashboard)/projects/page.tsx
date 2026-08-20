@@ -78,7 +78,7 @@ export default function ProjectsPage() {
     formState: { errors, isSubmitting },
   } = useForm<ProjectFormInput, unknown, ProjectFormOutput>({
     resolver: zodResolver(createProjectSchema),
-    defaultValues: { name: "", description: "", client: "", members: [] },
+    defaultValues: { name: "", description: "", client: "", members: [], contentEnabled: false },
   });
 
   const selectedMembers = watch("members") || [];
@@ -118,7 +118,7 @@ export default function ProjectsPage() {
     try {
       await apiFetch("/api/projects", { method: "POST", body: JSON.stringify(data) });
       toast.success(`Project "${data.name}" created`);
-      reset({ name: "", description: "", client: "", members: [] });
+      reset({ name: "", description: "", client: "", members: [], contentEnabled: false });
       setOpen(false);
       load();
     } catch (err) {
@@ -178,6 +178,13 @@ export default function ProjectsPage() {
                     <Label htmlFor="description">Description</Label>
                     <Textarea id="description" rows={3} {...register("description")} />
                   </div>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={watch("contentEnabled") || false}
+                      onCheckedChange={(checked) => setValue("contentEnabled", checked === true)}
+                    />
+                    Doing content for this client
+                  </label>
                   <div className="flex flex-col gap-1.5">
                     <Label>Team members</Label>
                     <div className="flex max-h-40 flex-col gap-1 overflow-y-auto rounded-md border p-2">
@@ -281,9 +288,14 @@ export default function ProjectsPage() {
                 <CardHeader className="pb-1.5">
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle>{p.name}</CardTitle>
-                    <Badge className={cn("shrink-0 border-transparent capitalize", projectStatusColors[p.status])}>
-                      {p.status}
-                    </Badge>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {p.contentEnabled && (
+                        <Badge className="border-transparent bg-accent-violet-soft text-accent-violet">Content</Badge>
+                      )}
+                      <Badge className={cn("border-transparent capitalize", projectStatusColors[p.status])}>
+                        {p.status}
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="flex min-h-28 flex-col gap-2.5 pb-1">

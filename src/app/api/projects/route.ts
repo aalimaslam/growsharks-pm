@@ -35,6 +35,7 @@ export async function POST(req: Request) {
       description: body.description,
       client: body.client,
       deadline: body.deadline || null,
+      contentEnabled: body.contentEnabled,
       createdBy: me.id,
       members: body.members,
     });

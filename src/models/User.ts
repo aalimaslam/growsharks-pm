@@ -9,6 +9,10 @@ const userSchema = new Schema(
     title: { type: String, trim: true, default: "" },
     isActive: { type: Boolean, default: true },
     mustChangePassword: { type: Boolean, default: false },
+    // Marks this person as part of the content team — makes them selectable
+    // as a content-calendar assignee, grants access to /content, and is who
+    // gets the day-of reminder email for posts assigned to them.
+    isContentTeam: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

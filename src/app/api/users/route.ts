@@ -42,6 +42,7 @@ export async function POST(req: Request) {
       email: body.email.toLowerCase(),
       role: body.role,
       title: body.title,
+      isContentTeam: body.isContentTeam,
       passwordHash,
       mustChangePassword: true,
     });

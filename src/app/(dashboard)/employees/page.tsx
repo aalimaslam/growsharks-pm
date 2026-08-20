@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Plus, UserX, UserCheck, Trash2 } from "lucide-react";
+import { Plus, UserX, UserCheck, Trash2, Megaphone } from "lucide-react";
 import { z } from "zod";
 import { apiFetch, ApiClientError } from "@/lib/apiClient";
 import { createEmployeeSchema } from "@/lib/validators";
@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type EmployeeFormInput = z.input<typeof createEmployeeSchema>;
 type EmployeeFormOutput = z.output<typeof createEmployeeSchema>;
@@ -68,14 +69,14 @@ export default function EmployeesPage() {
     formState: { errors, isSubmitting },
   } = useForm<EmployeeFormInput, unknown, EmployeeFormOutput>({
     resolver: zodResolver(createEmployeeSchema),
-    defaultValues: { role: "employee", title: "" },
+    defaultValues: { role: "employee", title: "", isContentTeam: false },
   });
 
   const onSubmit = async (data: EmployeeFormOutput) => {
     try {
       await apiFetch("/api/users", { method: "POST", body: JSON.stringify(data) });
       toast.success(`Account created for ${data.name}. A welcome email was sent.`);
-      reset({ name: "", email: "", role: "employee", title: "" });
+      reset({ name: "", email: "", role: "employee", title: "", isContentTeam: false });
       setOpen(false);
       load();
     } catch (err) {
@@ -87,6 +88,19 @@ export default function EmployeesPage() {
     try {
       await apiFetch(`/api/users/${user._id}`, { method: "PATCH", body: JSON.stringify({ isActive: !user.isActive }) });
       toast.success(user.isActive ? "Employee deactivated" : "Employee reactivated");
+      load();
+    } catch (err) {
+      toast.error(err instanceof ApiClientError ? err.message : "Action failed");
+    }
+  };
+
+  const toggleContentTeam = async (user: UserJSON) => {
+    try {
+      await apiFetch(`/api/users/${user._id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isContentTeam: !user.isContentTeam }),
+      });
+      toast.success(user.isContentTeam ? "Removed from content team" : "Added to content team");
       load();
     } catch (err) {
       toast.error(err instanceof ApiClientError ? err.message : "Action failed");
@@ -156,6 +170,13 @@ export default function EmployeesPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <Checkbox
+                  checked={watch("isContentTeam") || false}
+                  onCheckedChange={(checked) => setValue("isContentTeam", checked === true)}
+                />
+                Content team member
+              </label>
               <DialogFooter>
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? "Creating..." : "Create account"}
@@ -173,6 +194,7 @@ export default function EmployeesPage() {
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Content</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -180,7 +202,7 @@ export default function EmployeesPage() {
           <TableBody>
             {!loading && users.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   No employees yet. Add your first one above.
                 </TableCell>
               </TableRow>
@@ -205,6 +227,15 @@ export default function EmployeesPage() {
                   <Badge className={cn("capitalize border-transparent", roleColors[u.role])}>{u.role}</Badge>
                 </TableCell>
                 <TableCell>
+                  {u.isContentTeam ? (
+                    <Badge className="border-transparent bg-accent-violet-soft text-accent-violet">
+                      <Megaphone className="size-3" /> Content
+                    </Badge>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
                   <Badge
                     className={cn(
                       "border-transparent",
@@ -216,6 +247,9 @@ export default function EmployeesPage() {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => toggleContentTeam(u)}>
+                      <Megaphone /> {u.isContentTeam ? "Unmark content" : "Mark content"}
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => toggleActive(u)}>
                       {u.isActive ? (
                         <>

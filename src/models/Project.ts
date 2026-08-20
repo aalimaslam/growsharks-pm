@@ -27,6 +27,9 @@ const projectSchema = new Schema(
     client: { type: String, trim: true, default: "" },
     status: { type: String, enum: ["active", "on-hold", "completed", "archived"], default: "active" },
     deadline: { type: Date },
+    // Whether we're producing content (social posts, etc.) for this client —
+    // drives whether it shows up as a project option on the content calendar.
+    contentEnabled: { type: Boolean, default: false },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     members: [{ type: Schema.Types.ObjectId, ref: "User", index: true }],
     columns: { type: [columnSchema], default: DEFAULT_COLUMNS },

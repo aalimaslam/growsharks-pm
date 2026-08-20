@@ -11,6 +11,7 @@ export interface UserJSON {
   role: Role;
   title?: string;
   isActive: boolean;
+  isContentTeam: boolean;
   createdAt: string;
 }
 
@@ -27,6 +28,7 @@ export interface ProjectJSON {
   client: string;
   status: ProjectStatus;
   deadline: string | null;
+  contentEnabled: boolean;
   createdBy: string;
   members: UserJSON[] | string[];
   columns: ColumnJSON[];
@@ -108,6 +110,35 @@ export interface FinanceEntryJSON {
   reimbursed: boolean;
   reimbursedBy: UserJSON | string | null;
   reimbursedAt: string | null;
+}
+
+export type ContentPlatform = "instagram" | "facebook" | "x" | "linkedin" | "youtube" | "tiktok" | "other";
+export type ContentStatus = "scheduled" | "posted" | "missed";
+
+export interface ContentPostJSON {
+  _id: string;
+  project: ProjectJSON | string;
+  title: string;
+  notes: string;
+  platform: ContentPlatform;
+  scheduledDate: string;
+  isRecurring: boolean;
+  assignedTo: UserJSON | string;
+  status: ContentStatus;
+  isReady: boolean;
+  readyMarkedAt: string | null;
+  createdBy: UserJSON | string;
+  dayBeforeReminderSentAt: string | null;
+  finalReminderSentAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  // Present when returned from a month-filtered GET /api/content — the date
+  // this item actually falls on within the requested month (equal to
+  // scheduledDate except for a recurring post viewed in a later month).
+  occurrenceDate: string;
+  // True when this row is a computed monthly repeat, not the literal anchor
+  // document — editing it still edits the whole series (see scheduledDate).
+  isVirtualOccurrence: boolean;
 }
 
 export interface AuditLogJSON {

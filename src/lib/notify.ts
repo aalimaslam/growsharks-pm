@@ -13,7 +13,8 @@ interface NotifyOptions {
     | "task-comment"
     | "account-created"
     | "password-changed"
-    | "expense-reimbursed";
+    | "expense-reimbursed"
+    | "content-reminder";
   message: string;
   link?: string;
   subject: string;

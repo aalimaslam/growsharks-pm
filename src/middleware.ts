@@ -27,6 +27,11 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
   }
 
+  const canAccessContent = role === "admin" || !!req.auth?.user?.isContentTeam;
+  if (isLoggedIn && !canAccessContent && pathname.startsWith("/content")) {
+    return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
+  }
+
   return NextResponse.next();
 });
 

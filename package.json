@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "seed:admin": "tsx scripts/seedAdmin.ts",
-    "dev:mongo": "tsx scripts/localMongo.ts"
+    "dev:mongo": "tsx scripts/localMongo.ts",
+    "backup:data": "tsx scripts/backupData.ts",
+    "restore:data": "tsx scripts/restoreData.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

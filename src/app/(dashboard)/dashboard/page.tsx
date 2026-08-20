@@ -19,6 +19,10 @@ import {
   Clock,
   Wallet,
   Target,
+  Megaphone,
+  Send,
+  CalendarX,
+  Percent,
 } from "lucide-react";
 
 function formatINR(amount: number) {
@@ -47,6 +51,24 @@ export default async function DashboardPage() {
         accent: d.netThisMonth >= 0 ? ("blue" as const) : ("pink" as const),
       },
       { label: "Task completion rate", value: `${d.completionRate}%`, icon: Target, accent: "amber" as const },
+    ];
+
+    const contentStats = [
+      { label: "Content posts (month)", value: d.contentPostsThisMonth, icon: Megaphone, accent: "violet" as const },
+      { label: "Posted on time", value: d.contentPostedThisMonth, icon: Send, accent: "cyan" as const },
+      {
+        label: "Missed / at risk",
+        value: d.contentMissedThisMonth,
+        icon: CalendarX,
+        accent: "pink" as const,
+        warn: d.contentMissedThisMonth > 0,
+      },
+      {
+        label: "On-time rate",
+        value: d.contentOnTimeRate === null ? "—" : `${d.contentOnTimeRate}%`,
+        icon: Percent,
+        accent: "amber" as const,
+      },
     ];
 
     return (
@@ -154,6 +176,61 @@ export default async function DashboardPage() {
                   <Badge className={cn("capitalize border-transparent", projectStatusColors[p.status])}>{p.status}</Badge>
                 </Link>
               ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-border/80 bg-card/85">
+          <div className="soft-grid flex flex-wrap items-center justify-between gap-2 px-4 py-3 sm:px-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-normal text-muted-foreground">Content team</p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight">Content output &amp; reliability</h2>
+            </div>
+            <Badge variant="outline" className="gap-1">
+              {d.activeRecurringSeriesCount} recurring series active
+            </Badge>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {contentStats.map((s) => (
+            <KpiTile key={s.label} icon={s.icon} label={s.label} value={s.value} accent={s.accent} warn={s.warn} />
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+          <Card className="xl:col-span-5">
+            <CardHeader>
+              <CardTitle className="text-base">Content output (6 months)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SimpleBarChart
+                data={d.contentTrend}
+                xKey="month"
+                series={[{ key: "posts", label: "Posts", color: "var(--chart-4)" }]}
+                height={200}
+              />
+            </CardContent>
+          </Card>
+          <Card className="xl:col-span-4">
+            <CardHeader>
+              <CardTitle className="text-base">Posts by team member (this month)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SimpleBarChart
+                data={d.contentByTeamMember}
+                xKey="name"
+                series={[{ key: "count", label: "Posts", color: "var(--chart-6)" }]}
+                height={200}
+              />
+            </CardContent>
+          </Card>
+          <Card className="xl:col-span-3">
+            <CardHeader>
+              <CardTitle className="text-base">Posts by platform (this month)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SimpleDonutChart data={d.contentByPlatform} height={200} />
             </CardContent>
           </Card>
         </div>

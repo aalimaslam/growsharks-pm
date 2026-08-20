@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError, type ZodType } from "zod";
 import { auth } from "@/lib/auth";
-import type { SessionUser } from "@/lib/permissions";
+import { canAccessContent, type SessionUser } from "@/lib/permissions";
 
 export class ApiError extends Error {
   status: number;
@@ -20,6 +20,12 @@ export async function requireUser(): Promise<SessionUser> {
 export async function requireAdmin(): Promise<SessionUser> {
   const user = await requireUser();
   if (user.role !== "admin") throw new ApiError(403, "Admin access required");
+  return user;
+}
+
+export async function requireContentAccess(): Promise<SessionUser> {
+  const user = await requireUser();
+  if (!canAccessContent(user)) throw new ApiError(403, "Content team access required");
   return user;
 }
 

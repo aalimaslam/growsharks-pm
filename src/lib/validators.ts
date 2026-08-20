@@ -10,6 +10,7 @@ export const createEmployeeSchema = z.object({
   email: z.string().trim().email(),
   role: z.enum(["admin", "employee"]).default("employee"),
   title: z.string().trim().optional().default(""),
+  isContentTeam: z.boolean().optional().default(false),
 });
 
 export const updateUserSchema = z.object({
@@ -17,6 +18,7 @@ export const updateUserSchema = z.object({
   title: z.string().trim().optional(),
   role: z.enum(["admin", "employee"]).optional(),
   isActive: z.boolean().optional(),
+  isContentTeam: z.boolean().optional(),
 });
 
 export const changePasswordSchema = z.object({
@@ -30,6 +32,7 @@ export const createProjectSchema = z.object({
   client: z.string().trim().optional().default(""),
   deadline: z.string().datetime().optional().nullable(),
   members: z.array(z.string()).optional().default([]),
+  contentEnabled: z.boolean().optional().default(false),
 });
 
 export const updateProjectSchema = z.object({
@@ -39,6 +42,33 @@ export const updateProjectSchema = z.object({
   status: z.enum(["active", "on-hold", "completed", "archived"]).optional(),
   deadline: z.string().datetime().nullable().optional(),
   members: z.array(z.string()).optional(),
+  contentEnabled: z.boolean().optional(),
+});
+
+export const contentPlatforms = ["instagram", "facebook", "x", "linkedin", "youtube", "tiktok", "other"] as const;
+
+export const createContentPostSchema = z.object({
+  project: z.string().min(1, "Project is required"),
+  title: z.string().trim().min(1, "Title is required"),
+  notes: z.string().trim().optional().default(""),
+  platform: z.enum(contentPlatforms).optional().default("other"),
+  scheduledDate: z.string().datetime(),
+  isRecurring: z.boolean().optional().default(false),
+  assignedTo: z.string().min(1, "Assignee is required"),
+  status: z.enum(["scheduled", "posted", "missed"]).optional().default("scheduled"),
+  isReady: z.boolean().optional().default(false),
+});
+
+export const updateContentPostSchema = z.object({
+  project: z.string().min(1).optional(),
+  title: z.string().trim().min(1).optional(),
+  isReady: z.boolean().optional(),
+  notes: z.string().trim().optional(),
+  platform: z.enum(contentPlatforms).optional(),
+  scheduledDate: z.string().datetime().optional(),
+  isRecurring: z.boolean().optional(),
+  assignedTo: z.string().min(1).optional(),
+  status: z.enum(["scheduled", "posted", "missed"]).optional(),
 });
 
 export const columnsSchema = z.object({

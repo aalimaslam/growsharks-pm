@@ -12,6 +12,7 @@ const notificationSchema = new Schema(
         "account-created",
         "password-changed",
         "expense-reimbursed",
+        "content-reminder",
       ],
       required: true,
     },

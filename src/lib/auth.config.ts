@@ -13,6 +13,7 @@ export const authConfig: NextAuthConfig = {
       if (user) {
         token.id = (user as { id: string }).id;
         token.role = (user as { role: "admin" | "employee" }).role;
+        token.isContentTeam = (user as { isContentTeam: boolean }).isContentTeam;
       }
       if (trigger === "update" && session?.name) {
         token.name = session.name;
@@ -23,6 +24,7 @@ export const authConfig: NextAuthConfig = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as "admin" | "employee";
+        session.user.isContentTeam = Boolean(token.isContentTeam);
       }
       return session;
     },

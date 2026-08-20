@@ -5,10 +5,17 @@ export interface SessionUser {
   name: string;
   email: string;
   role: "admin" | "employee";
+  isContentTeam: boolean;
 }
 
 export function isAdmin(user: SessionUser | null | undefined): boolean {
   return user?.role === "admin";
+}
+
+// Content calendar is shared between admins and whoever is flagged as
+// content team — everyone else (regular employees) can't see it.
+export function canAccessContent(user: SessionUser | null | undefined): boolean {
+  return user?.role === "admin" || Boolean(user?.isContentTeam);
 }
 
 // project.members may be raw ObjectIds/strings or populated User documents

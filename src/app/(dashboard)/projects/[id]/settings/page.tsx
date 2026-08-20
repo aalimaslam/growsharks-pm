@@ -154,6 +154,13 @@ export default function ProjectSettingsPage({ params }: { params: Promise<{ id: 
               </SelectContent>
             </Select>
           </div>
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <Checkbox
+              checked={project.contentEnabled}
+              onCheckedChange={(checked) => saveDetails({ contentEnabled: checked === true })}
+            />
+            Doing content for this client
+          </label>
         </CardContent>
       </Card>
 

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, User as UserIcon, Menu, Waves, Search } from "lucide-react";
 import { NotificationBell } from "@/components/layout/NotificationBell";
-import { navLinks } from "@/components/layout/nav-links";
+import { navLinks, isNavLinkVisible } from "@/components/layout/nav-links";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -26,6 +26,7 @@ interface TopbarProps {
   name: string;
   email: string;
   role: "admin" | "employee";
+  isContentTeam: boolean;
 }
 
 type SearchResults = {
@@ -43,7 +44,7 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export function Topbar({ name, email, role }: TopbarProps) {
+export function Topbar({ name, email, role, isContentTeam }: TopbarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -96,7 +97,7 @@ export function Topbar({ name, email, role }: TopbarProps) {
             </div>
             <nav className="flex flex-col gap-1 p-3 pt-0">
               {navLinks
-                .filter((l) => !l.adminOnly || role === "admin")
+                .filter((l) => isNavLinkVisible(l, { role, isContentTeam }))
                 .map((link) => {
                   const active = pathname === link.href || pathname.startsWith(link.href + "/");
                   const Icon = link.icon;

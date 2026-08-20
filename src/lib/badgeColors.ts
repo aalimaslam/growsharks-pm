@@ -43,6 +43,18 @@ export const reimbursementColors: Record<"reimbursed" | "pending", string> = {
   pending: "bg-accent-amber-soft text-accent-amber",
 };
 
+export const contentStatusColors: Record<string, string> = {
+  scheduled: "bg-accent-blue-soft text-accent-blue",
+  posted: "bg-accent-cyan-soft text-accent-cyan",
+  missed: "bg-accent-pink-soft text-accent-pink",
+};
+
+export const contentStatusBorderColors: Record<string, string> = {
+  scheduled: "border-l-accent-blue",
+  posted: "border-l-accent-cyan",
+  missed: "border-l-accent-pink",
+};
+
 const avatarPalette = [
   "bg-accent-blue-soft text-accent-blue",
   "bg-accent-violet-soft text-accent-violet",

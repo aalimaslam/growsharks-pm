@@ -93,6 +93,42 @@ export function expenseReimbursedEmail(opts: {
   };
 }
 
+interface ContentReminderOpts {
+  recipientName: string;
+  postTitle: string;
+  projectName: string;
+  platform: string;
+  postAt: string;
+  isRecurring: boolean;
+}
+
+// Sent ~24h before the post is due — asks whether it's ready, since the
+// second (closer-to-post-time) reminder only fires if someone confirms it is.
+export function contentDayBeforeEmail(opts: ContentReminderOpts): { subject: string; html: string } {
+  return {
+    subject: `Is "${opts.postTitle}" ready for tomorrow?`,
+    html: layout("Content due tomorrow", `
+      <p>Hi ${opts.recipientName},</p>
+      <p><strong>${opts.postTitle}</strong> (${opts.platform}) for <strong>${opts.projectName}</strong> is due <strong>${opts.postAt}</strong> — about a day from now.</p>
+      <p>Open the content calendar and mark it &ldquo;Ready to post&rdquo; once it's prepared — we'll send one more reminder a few hours before it's due.</p>
+      ${opts.isRecurring ? `<p style="color:#737373;font-size:13px;">This post repeats monthly — you'll get these reminders again next month.</p>` : ""}
+      ${button(`${appUrl()}/content`, "Open content calendar")}
+    `),
+  };
+}
+
+// Sent within ~4h of the post time, only for posts already marked ready.
+export function contentFinalReminderEmail(opts: ContentReminderOpts): { subject: string; html: string } {
+  return {
+    subject: `Going live soon: "${opts.postTitle}"`,
+    html: layout("Posting soon", `
+      <p>Hi ${opts.recipientName},</p>
+      <p><strong>${opts.postTitle}</strong> (${opts.platform}) for <strong>${opts.projectName}</strong> is due <strong>${opts.postAt}</strong> — just a few hours away.</p>
+      ${button(`${appUrl()}/content`, "Open content calendar")}
+    `),
+  };
+}
+
 export function passwordChangedEmail(opts: { name: string }): { subject: string; html: string } {
   return {
     subject: "Your password was changed",

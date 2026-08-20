@@ -4,6 +4,7 @@ import { Project, DONE_COLUMN_IDS } from "@/models/Project";
 import { Task } from "@/models/Task";
 import { User } from "@/models/User";
 import { FinanceEntry } from "@/models/FinanceEntry";
+import { ContentPost } from "@/models/ContentPost";
 import { withCache } from "@/lib/cache";
 
 const DONE_IDS = [...DONE_COLUMN_IDS];
@@ -39,6 +40,14 @@ export interface AdminDashboardData {
   weekBuckets: { week: string; completed: number }[];
   financeTrend: { month: string; income: number; expense: number }[];
   hoursByEmployee: { name: string; hours: number }[];
+  contentPostsThisMonth: number;
+  contentPostedThisMonth: number;
+  contentMissedThisMonth: number;
+  contentOnTimeRate: number | null;
+  activeRecurringSeriesCount: number;
+  contentByPlatform: { name: string; value: number }[];
+  contentByTeamMember: { name: string; count: number }[];
+  contentTrend: { month: string; posts: number }[];
 }
 
 // Every dashboard number is "as of a few seconds ago" by nature (aggregate
@@ -70,6 +79,8 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
     financeLast6Months,
     hoursThisMonthAgg,
     hoursByEmployeeAgg,
+    contentOneTimeRecent,
+    contentRecurringActive,
   ] = await Promise.all([
     Project.countDocuments(),
     User.countDocuments({ role: "employee", isActive: true }),
@@ -97,6 +108,26 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
       { $sort: { hours: -1 } },
       { $limit: 5 },
     ]),
+    // One-off content posts, last 6 months through end of this month —
+    // covers both "this month" stats and the 6-month trend from one query.
+    ContentPost.find({
+      isRecurring: { $ne: true },
+      scheduledDate: { $gte: sixMonthsAgo, $lt: new Date(now.getFullYear(), now.getMonth() + 1, 1) },
+    })
+      .populate("assignedTo", "name")
+      .select("scheduledDate status platform assignedTo")
+      .lean(),
+    // Every recurring series that's started by end of this month — each one
+    // has (or will have) exactly one occurrence per month from its anchor
+    // onward, so this single fetch covers "active series count", this
+    // month's volume, and every past month's volume in the trend chart.
+    ContentPost.find({
+      isRecurring: true,
+      scheduledDate: { $lt: new Date(now.getFullYear(), now.getMonth() + 1, 1) },
+    })
+      .populate("assignedTo", "name")
+      .select("scheduledDate platform assignedTo")
+      .lean(),
   ]);
 
   const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
@@ -140,6 +171,61 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
     hours: Math.round(h.hours * 10) / 10,
   }));
 
+  // --- Content team stats ---
+  // Recurring posts don't track completion per occurrence (see
+  // ContentPostDialog — status stays "scheduled" for the whole series), so
+  // posted/missed/on-time-rate are computed from one-off posts only. Volume
+  // and per-platform/per-person breakdowns count both, since those describe
+  // output rather than confirmed completion.
+  const monthStart = startOfMonth(now);
+  const nextMonthStart = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1);
+  const memberName = (p: { assignedTo?: unknown }) =>
+    (p.assignedTo as unknown as { name: string } | null)?.name || "Unassigned";
+
+  const contentOneTimeThisMonth = contentOneTimeRecent.filter((p) => {
+    const d = p.scheduledDate as Date;
+    return d >= monthStart && d < nextMonthStart;
+  });
+  const dueOneTimeThisMonth = contentOneTimeThisMonth.filter((p) => (p.scheduledDate as Date) <= now);
+  const contentPostedThisMonth = dueOneTimeThisMonth.filter((p) => p.status === "posted").length;
+  const contentMissedThisMonth = dueOneTimeThisMonth.filter((p) => p.status !== "posted").length;
+  const contentOnTimeRate =
+    dueOneTimeThisMonth.length > 0 ? Math.round((contentPostedThisMonth / dueOneTimeThisMonth.length) * 100) : null;
+
+  // contentRecurringActive was queried as "anchor before end of this month",
+  // and a recurring series occurs every month from its anchor onward with no
+  // gaps — so every series in it necessarily has one occurrence this month.
+  const monthOccurrences = [
+    ...contentOneTimeThisMonth.map((p) => ({ platform: p.platform as string, member: memberName(p) })),
+    ...contentRecurringActive.map((p) => ({ platform: p.platform as string, member: memberName(p) })),
+  ];
+
+  const platformMap = new Map<string, number>();
+  const memberMap = new Map<string, number>();
+  for (const p of monthOccurrences) {
+    platformMap.set(p.platform, (platformMap.get(p.platform) || 0) + 1);
+    memberMap.set(p.member, (memberMap.get(p.member) || 0) + 1);
+  }
+  const contentByPlatform = [...platformMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, value]) => ({ name, value }));
+  const contentByTeamMember = [...memberMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([name, count]) => ({ name, count }));
+
+  const contentTrend: { month: string; posts: number }[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const bucketStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const bucketEnd = new Date(bucketStart.getFullYear(), bucketStart.getMonth() + 1, 1);
+    const oneTimeCount = contentOneTimeRecent.filter((p) => {
+      const d = p.scheduledDate as Date;
+      return d >= bucketStart && d < bucketEnd;
+    }).length;
+    const recurringCount = contentRecurringActive.filter((p) => new Date(p.scheduledDate) < bucketEnd).length;
+    contentTrend.push({ month: monthLabel(bucketStart), posts: oneTimeCount + recurringCount });
+  }
+
   return {
     projectCount,
     employeeCount,
@@ -156,6 +242,14 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
     weekBuckets,
     financeTrend,
     hoursByEmployee,
+    contentPostsThisMonth: monthOccurrences.length,
+    contentPostedThisMonth,
+    contentMissedThisMonth,
+    contentOnTimeRate,
+    activeRecurringSeriesCount: contentRecurringActive.length,
+    contentByPlatform,
+    contentByTeamMember,
+    contentTrend,
   };
 }
 
