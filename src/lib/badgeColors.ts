@@ -43,6 +43,14 @@ export const reimbursementColors: Record<"reimbursed" | "pending", string> = {
   pending: "bg-accent-amber-soft text-accent-amber",
 };
 
+export const invoiceStatusColors: Record<string, string> = {
+  draft: "bg-muted text-muted-foreground",
+  sent: "bg-accent-blue-soft text-accent-blue",
+  paid: "bg-accent-cyan-soft text-accent-cyan",
+  overdue: "bg-accent-pink-soft text-accent-pink",
+  cancelled: "bg-accent-amber-soft text-accent-amber",
+};
+
 export const contentStatusColors: Record<string, string> = {
   scheduled: "bg-accent-blue-soft text-accent-blue",
   posted: "bg-accent-cyan-soft text-accent-cyan",

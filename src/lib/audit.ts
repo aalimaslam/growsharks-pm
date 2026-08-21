@@ -1,6 +1,6 @@
 import { AuditLog } from "@/models/AuditLog";
 
-type EntityType = "task" | "project" | "finance";
+type EntityType = "task" | "project" | "finance" | "invoice";
 type Action = "create" | "update" | "delete" | "comment" | "timelog" | "reimburse" | "unreimburse";
 
 interface RecordAuditOptions {

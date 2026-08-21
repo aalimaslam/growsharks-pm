@@ -153,3 +153,46 @@ export const updateFinanceEntrySchema = z.object({
 export const reimburseSchema = z.object({
   reimbursed: z.boolean().optional().default(true),
 });
+
+export const invoiceStatuses = ["draft", "sent", "paid", "overdue", "cancelled"] as const;
+
+const invoiceItemInputSchema = z.object({
+  description: z.string().trim().min(1, "Item description is required"),
+  quantity: z.number().positive("Quantity must be greater than 0"),
+  unitPrice: z.number().min(0, "Unit price can't be negative"),
+});
+
+const invoiceClientInputSchema = z.object({
+  name: z.string().trim().min(1, "Client name is required"),
+  email: z.string().trim().optional().default(""),
+  phone: z.string().trim().optional().default(""),
+  address: z.string().trim().optional().default(""),
+});
+
+export const createInvoiceSchema = z.object({
+  client: invoiceClientInputSchema,
+  project: z.string().min(1).nullable().optional(),
+  items: z.array(invoiceItemInputSchema).min(1, "Add at least one line item"),
+  currency: z.string().trim().min(1).optional().default("INR"),
+  taxRate: z.number().min(0).max(100).optional().default(0),
+  discount: z.number().min(0).optional().default(0),
+  issueDate: z.string().datetime(),
+  dueDate: z.string().datetime(),
+  status: z.enum(invoiceStatuses).optional().default("draft"),
+  notes: z.string().trim().optional().default(""),
+  terms: z.string().trim().optional(),
+});
+
+export const updateInvoiceSchema = z.object({
+  client: invoiceClientInputSchema.optional(),
+  project: z.string().min(1).nullable().optional(),
+  items: z.array(invoiceItemInputSchema).min(1).optional(),
+  currency: z.string().trim().min(1).optional(),
+  taxRate: z.number().min(0).max(100).optional(),
+  discount: z.number().min(0).optional(),
+  issueDate: z.string().datetime().optional(),
+  dueDate: z.string().datetime().optional(),
+  status: z.enum(invoiceStatuses).optional(),
+  notes: z.string().trim().optional(),
+  terms: z.string().trim().optional(),
+});

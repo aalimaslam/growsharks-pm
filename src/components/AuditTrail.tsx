@@ -6,14 +6,15 @@ import { History } from "lucide-react";
 import { apiFetch } from "@/lib/apiClient";
 import type { AuditLogJSON } from "@/types";
 
-const ENDPOINT_SEGMENT: Record<"task" | "project" | "finance", string> = {
+const ENDPOINT_SEGMENT: Record<"task" | "project" | "finance" | "invoice", string> = {
   task: "tasks",
   project: "projects",
   finance: "finance",
+  invoice: "invoices",
 };
 
 interface AuditTrailProps {
-  entityType: "task" | "project" | "finance";
+  entityType: "task" | "project" | "finance" | "invoice";
   entityId: string;
   // Bump this (e.g. a counter) after a mutation on the same page/drawer so
   // the trail refetches without needing a full remount.

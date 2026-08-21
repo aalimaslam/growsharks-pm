@@ -143,11 +143,51 @@ export interface ContentPostJSON {
 
 export interface AuditLogJSON {
   _id: string;
-  entityType: "task" | "project" | "finance";
+  entityType: "task" | "project" | "finance" | "invoice";
   entityId: string;
   action: "create" | "update" | "delete" | "comment" | "timelog" | "reimburse" | "unreimburse";
   actor: UserJSON | string;
   message: string;
   changes: Record<string, { from: unknown; to: unknown }> | null;
   createdAt: string;
+}
+
+export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled";
+
+export interface InvoiceItemJSON {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+}
+
+export interface InvoiceClientJSON {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
+export interface InvoiceJSON {
+  _id: string;
+  invoiceNumber: string;
+  client: InvoiceClientJSON;
+  project: ProjectJSON | string | null;
+  items: InvoiceItemJSON[];
+  currency: string;
+  taxRate: number;
+  discount: number;
+  subtotal: number;
+  taxAmount: number;
+  total: number;
+  issueDate: string;
+  dueDate: string;
+  status: InvoiceStatus;
+  notes: string;
+  terms: string;
+  createdBy: UserJSON | string;
+  sentAt: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }

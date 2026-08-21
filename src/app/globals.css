@@ -217,3 +217,13 @@
     background-size: 40px 40px;
   }
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  .app-surface {
+    background: white;
+  }
+}

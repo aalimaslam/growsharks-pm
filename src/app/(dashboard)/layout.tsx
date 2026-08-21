@@ -10,11 +10,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { name, email, role, isContentTeam } = session.user;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-sidebar">
-      <Sidebar role={role} isContentTeam={isContentTeam} />
-      <div className="flex min-w-0 flex-1 flex-col bg-background md:rounded-l-2xl">
-        <Topbar name={name || email || "User"} email={email || ""} role={role} isContentTeam={isContentTeam} />
-        <main className="app-surface flex-1 overflow-y-auto">{children}</main>
+    <div className="flex h-screen overflow-hidden bg-sidebar print:block print:h-auto print:overflow-visible print:bg-white">
+      <div className="print:hidden">
+        <Sidebar role={role} isContentTeam={isContentTeam} />
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col bg-background md:rounded-l-2xl print:rounded-none print:bg-white">
+        <div className="print:hidden">
+          <Topbar name={name || email || "User"} email={email || ""} role={role} isContentTeam={isContentTeam} />
+        </div>
+        <main className="app-surface flex-1 overflow-y-auto print:overflow-visible">{children}</main>
       </div>
     </div>
   );

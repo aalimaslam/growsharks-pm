@@ -8,7 +8,7 @@ import { KpiTile } from "@/components/KpiTile";
 import { SimpleBarChart } from "@/components/charts/SimpleBarChart";
 import { SimpleDonutChart } from "@/components/charts/SimpleDonutChart";
 import { CHART_INCOME_COLOR, CHART_EXPENSE_COLOR } from "@/lib/chartColors";
-import { projectStatusColors, priorityColors } from "@/lib/badgeColors";
+import { projectStatusColors, priorityColors, invoiceStatusColors } from "@/lib/badgeColors";
 import { cn } from "@/lib/utils";
 import {
   FolderKanban,
@@ -23,6 +23,8 @@ import {
   Send,
   CalendarX,
   Percent,
+  FileText,
+  AlertCircle,
 } from "lucide-react";
 
 function formatINR(amount: number) {
@@ -51,6 +53,14 @@ export default async function DashboardPage() {
         accent: d.netThisMonth >= 0 ? ("blue" as const) : ("pink" as const),
       },
       { label: "Task completion rate", value: `${d.completionRate}%`, icon: Target, accent: "amber" as const },
+      { label: "Outstanding invoices", value: formatINR(d.outstandingInvoicesTotal), icon: FileText, accent: "blue" as const },
+      {
+        label: "Overdue invoices",
+        value: d.overdueInvoicesCount,
+        icon: AlertCircle,
+        accent: "pink" as const,
+        warn: d.overdueInvoicesCount > 0,
+      },
     ];
 
     const contentStats = [
@@ -174,6 +184,35 @@ export default async function DashboardPage() {
                 >
                   <span className="font-medium text-sm">{p.name}</span>
                   <Badge className={cn("capitalize border-transparent", projectStatusColors[p.status])}>{p.status}</Badge>
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+          <Card className="xl:col-span-12">
+            <CardHeader>
+              <CardTitle className="text-base">Recent invoices</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col divide-y">
+              {d.recentInvoices.length === 0 && (
+                <p className="py-4 text-sm text-muted-foreground">
+                  No invoices yet. <Link href="/invoices" className="underline">Create one</Link>.
+                </p>
+              )}
+              {d.recentInvoices.map((inv) => (
+                <Link
+                  key={inv.id}
+                  href={`/invoices/${inv.id}`}
+                  className="-mx-2 flex items-center justify-between gap-4 rounded-lg px-3 py-2.5 transition hover:bg-muted/55"
+                >
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm">{inv.invoiceNumber}</div>
+                    <div className="truncate text-xs text-muted-foreground">{inv.clientName}</div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-xs text-muted-foreground">Due {new Date(inv.dueDate).toLocaleDateString()}</span>
+                    <Badge className={cn("capitalize border-transparent", invoiceStatusColors[inv.status])}>{inv.status}</Badge>
+                    <span className="text-sm font-medium tabular-nums">{formatINR(inv.total)}</span>
+                  </div>
                 </Link>
               ))}
             </CardContent>

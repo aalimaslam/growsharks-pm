@@ -22,7 +22,7 @@ export default auth((req) => {
   }
 
   const role = req.auth?.user?.role;
-  const adminOnly = ["/employees", "/reports", "/finance"];
+  const adminOnly = ["/employees", "/reports", "/finance", "/invoices"];
   if (isLoggedIn && role !== "admin" && adminOnly.some((p) => pathname.startsWith(p))) {
     return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
   }

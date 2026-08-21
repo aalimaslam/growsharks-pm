@@ -5,6 +5,7 @@ import { Task } from "@/models/Task";
 import { User } from "@/models/User";
 import { FinanceEntry } from "@/models/FinanceEntry";
 import { ContentPost } from "@/models/ContentPost";
+import { Invoice } from "@/models/Invoice";
 import { withCache } from "@/lib/cache";
 
 const DONE_IDS = [...DONE_COLUMN_IDS];
@@ -35,6 +36,19 @@ export interface AdminDashboardData {
   incomeThisMonth: number;
   expenseThisMonth: number;
   netThisMonth: number;
+  outstandingInvoicesTotal: number;
+  outstandingInvoicesCount: number;
+  overdueInvoicesCount: number;
+  paidInvoicesThisMonth: number;
+  recentInvoices: {
+    id: string;
+    invoiceNumber: string;
+    clientName: string;
+    total: number;
+    currency: string;
+    status: string;
+    dueDate: string;
+  }[];
   recentProjects: { id: string; name: string; status: string }[];
   statusData: { name: string; value: number }[];
   weekBuckets: { week: string; completed: number }[];
@@ -81,6 +95,10 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
     hoursByEmployeeAgg,
     contentOneTimeRecent,
     contentRecurringActive,
+    invoicesOutstandingAgg,
+    invoicesPaidThisMonthAgg,
+    overdueInvoicesCount,
+    recentInvoicesRaw,
   ] = await Promise.all([
     Project.countDocuments(),
     User.countDocuments({ role: "employee", isActive: true }),
@@ -128,12 +146,40 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
       .populate("assignedTo", "name")
       .select("scheduledDate platform assignedTo")
       .lean(),
+    Invoice.aggregate([
+      { $match: { status: { $in: ["sent", "overdue"] } } },
+      { $group: { _id: null, total: { $sum: "$total" }, count: { $sum: 1 } } },
+    ]),
+    Invoice.aggregate([
+      { $match: { status: "paid", paidAt: { $gte: startOfMonth(now) } } },
+      { $group: { _id: null, total: { $sum: "$total" } } },
+    ]),
+    // Overdue isn't just the manually-set "overdue" status — a "sent"
+    // invoice whose due date has already passed counts too, same as how
+    // task overdueCount above is computed from dueDate rather than a stored flag.
+    Invoice.countDocuments({
+      $or: [{ status: "overdue" }, { status: "sent", dueDate: { $lt: now } }],
+    }),
+    Invoice.find().sort({ issueDate: -1 }).limit(5).select("invoiceNumber client total currency status dueDate").lean(),
   ]);
 
   const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
   const hoursThisMonth = hoursThisMonthAgg[0]?.hours ?? 0;
   const incomeThisMonth = financeThisMonth.find((f) => f._id === "income")?.total ?? 0;
   const expenseThisMonth = financeThisMonth.find((f) => f._id === "expense")?.total ?? 0;
+
+  const outstandingInvoicesTotal = invoicesOutstandingAgg[0]?.total ?? 0;
+  const outstandingInvoicesCount = invoicesOutstandingAgg[0]?.count ?? 0;
+  const paidInvoicesThisMonth = invoicesPaidThisMonthAgg[0]?.total ?? 0;
+  const recentInvoices = recentInvoicesRaw.map((inv) => ({
+    id: inv._id.toString(),
+    invoiceNumber: inv.invoiceNumber,
+    clientName: inv.client.name,
+    total: inv.total,
+    currency: inv.currency,
+    status: inv.status,
+    dueDate: new Date(inv.dueDate).toISOString(),
+  }));
 
   const statusData = statusBreakdown.map((s) => ({ name: String(s._id).replace(/-/g, " "), value: s.count }));
 
@@ -237,6 +283,11 @@ async function fetchAdminDashboardData(): Promise<AdminDashboardData> {
     incomeThisMonth,
     expenseThisMonth,
     netThisMonth: incomeThisMonth - expenseThisMonth,
+    outstandingInvoicesTotal,
+    outstandingInvoicesCount,
+    overdueInvoicesCount,
+    paidInvoicesThisMonth,
+    recentInvoices,
     recentProjects: recentProjects.map((p) => ({ id: p._id.toString(), name: p.name, status: p.status })),
     statusData,
     weekBuckets,

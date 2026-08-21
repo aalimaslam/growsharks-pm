@@ -2,7 +2,7 @@ import { Schema, model, models, type InferSchemaType, type Model } from "mongoos
 
 const auditLogSchema = new Schema(
   {
-    entityType: { type: String, enum: ["task", "project", "finance"], required: true, index: true },
+    entityType: { type: String, enum: ["task", "project", "finance", "invoice"], required: true, index: true },
     entityId: { type: Schema.Types.ObjectId, required: true, index: true },
     action: {
       type: String,

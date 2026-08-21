@@ -13,6 +13,8 @@ import { FinanceEntry } from "../src/models/FinanceEntry";
 import { Notification } from "../src/models/Notification";
 import { AuditLog } from "../src/models/AuditLog";
 import { ContentPost } from "../src/models/ContentPost";
+import { Invoice } from "../src/models/Invoice";
+import { Counter } from "../src/models/Counter";
 
 // Loads a JSON file produced by scripts/backupData.ts back into the
 // database. Upserts by _id (via bulkWrite), so it's safe to run against an
@@ -58,6 +60,8 @@ async function main() {
     notifications: (collections.notifications || []).length,
     auditLogs: (collections.auditLogs || []).length,
     contentPosts: (collections.contentPosts || []).length,
+    invoices: (collections.invoices || []).length,
+    counters: (collections.counters || []).length,
   };
 
   console.log(`Backup file: ${filePath}`);
@@ -70,6 +74,8 @@ async function main() {
   console.log(`  Notifications:    ${counts.notifications}`);
   console.log(`  Audit log entries:${counts.auditLogs}`);
   console.log(`  Content posts:    ${counts.contentPosts}`);
+  console.log(`  Invoices:         ${counts.invoices}`);
+  console.log(`  Counters:         ${counts.counters}`);
 
   if (!confirm) {
     console.log("\nDry run only — nothing was written. Re-run with --confirm to actually restore.");
@@ -89,6 +95,8 @@ async function main() {
   await upsertAll(Notification, collections.notifications || []);
   await upsertAll(AuditLog, collections.auditLogs || []);
   await upsertAll(ContentPost, collections.contentPosts || []);
+  await upsertAll(Invoice, collections.invoices || []);
+  await upsertAll(Counter, collections.counters || []);
 
   console.log("\nDone. Data restored.");
   await mongoose.disconnect();

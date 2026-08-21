@@ -13,6 +13,8 @@ import { FinanceEntry } from "../src/models/FinanceEntry";
 import { Notification } from "../src/models/Notification";
 import { AuditLog } from "../src/models/AuditLog";
 import { ContentPost } from "../src/models/ContentPost";
+import { Invoice } from "../src/models/Invoice";
+import { Counter } from "../src/models/Counter";
 
 // Dumps every collection to a single JSON file that scripts/restoreData.ts
 // can load back in later (e.g. after a migration, or to move data between
@@ -32,15 +34,18 @@ async function main() {
   await connectDB();
   console.log(`Connected to: ${mongoose.connection.name} @ ${mongoose.connection.host}`);
 
-  const [users, projects, tasks, financeEntries, notifications, auditLogs, contentPosts] = await Promise.all([
-    User.find().lean(),
-    Project.find().lean(),
-    Task.find().lean(),
-    FinanceEntry.find().lean(),
-    Notification.find().lean(),
-    AuditLog.find().lean(),
-    ContentPost.find().lean(),
-  ]);
+  const [users, projects, tasks, financeEntries, notifications, auditLogs, contentPosts, invoices, counters] =
+    await Promise.all([
+      User.find().lean(),
+      Project.find().lean(),
+      Task.find().lean(),
+      FinanceEntry.find().lean(),
+      Notification.find().lean(),
+      AuditLog.find().lean(),
+      ContentPost.find().lean(),
+      Invoice.find().lean(),
+      Counter.find().lean(),
+    ]);
 
   const backup = {
     exportedAt: new Date().toISOString(),
@@ -52,6 +57,8 @@ async function main() {
       notifications,
       auditLogs,
       contentPosts,
+      invoices,
+      counters,
     },
   };
 
@@ -69,6 +76,8 @@ async function main() {
   console.log(`  Notifications:    ${notifications.length}`);
   console.log(`  Audit log entries:${auditLogs.length}`);
   console.log(`  Content posts:    ${contentPosts.length}`);
+  console.log(`  Invoices:         ${invoices.length}`);
+  console.log(`  Counters:         ${counters.length}`);
   console.log(`\nWritten to: ${outPath}`);
   console.log("Restore with: npx tsx scripts/restoreData.ts " + path.relative(process.cwd(), outPath) + " --confirm");
 
